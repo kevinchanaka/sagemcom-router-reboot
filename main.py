@@ -1,20 +1,16 @@
 import sys
 import time
 import logging
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
-from selenium.webdriver.chrome.service import (
-    Service as ChromeService,
-)
 from selenium.webdriver.common.by import By
-from config import ROUTER_IP, ROUTER_USERNAME, ROUTER_PASSWORD, WAIT_TIME
+from config import ROUTER_IP, ROUTER_USERNAME, ROUTER_PASSWORD, WAIT_TIME, GRID_ENDPOINT
 
 logging.basicConfig(level=logging.INFO)
 
 logging.info("Setting up driver")
-chrome_options = webdriver.ChromeOptions()
-service = ChromeService(executable_path=ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service)
+driver = webdriver.Remote(
+    command_executor=f"http://{GRID_ENDPOINT}/wd/hub", options=webdriver.ChromeOptions()
+)
 
 logging.info("Connecting to router homepage")
 driver.get(f"http://{ROUTER_IP}/2.0/gui/#/login/")
@@ -43,11 +39,12 @@ driver.implicitly_wait(WAIT_TIME)
 
 reboot_button = driver.find_element(by=By.ID, value="restartGatewayTip")
 reboot_button.click()
+time.sleep(WAIT_TIME)
 
 logging.info("Restarting router")
 restart_modal = driver.find_element(by=By.ID, value="restart-modal")
 confirm_button = driver.find_elements(by=By.TAG_NAME, value="button")[-1]
-# confirm_button.click()
+confirm_button.click()
 
 logging.info("Router rebooted")
 driver.quit()
