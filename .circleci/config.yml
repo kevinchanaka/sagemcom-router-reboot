@@ -1,0 +1,33 @@
+version: 2.1
+
+workflows:
+  version: 2
+  project_cicd:
+    jobs:
+      - build:
+          context:
+            - docker-hub
+
+jobs:
+  build:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker:
+          version: 19.03.13
+      - checkout
+      - run:
+          name: Building image
+          command: |
+            docker build -t $CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM .
+            echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+      - run:
+          name: Pushing new image version
+          command: |
+            docker tag $CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM $DOCKER_HUB_USERNAME/$CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM
+            docker push $DOCKER_HUB_USERNAME/$CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM
+      - run:
+          name: Pushing latest version
+          command: |
+            docker tag $CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM $DOCKER_HUB_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
+            docker push $DOCKER_HUB_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
